@@ -46,7 +46,8 @@ import {
   DollarOutlined,
   BookOutlined,
   BellOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { mockWallet, mockKits, mockGroups } from './mocks';
@@ -104,6 +105,8 @@ function LecturerPortal({ user, onLogout }) {
   const [refundRequests, setRefundRequests] = useState([]);
   const [newRefundModal, setNewRefundModal] = useState(false);
   const [refundForm] = Form.useForm();
+  const [groupDetailModal, setGroupDetailModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   // Animation variants
   const pageVariants = {
@@ -182,6 +185,11 @@ function LecturerPortal({ user, onLogout }) {
 
   const handleNewRefund = () => {
     setNewRefundModal(true);
+  };
+
+  const handleViewGroupDetails = (group) => {
+    setSelectedGroup(group);
+    setGroupDetailModal(true);
   };
 
   const handleRefundSubmit = async (values) => {
@@ -410,7 +418,7 @@ function LecturerPortal({ user, onLogout }) {
                 transition={pageTransition}
               >
                 {selectedKey === 'dashboard' && <DashboardContent lecturerGroups={lecturerGroups} wallet={wallet} kits={kits} />}
-                {selectedKey === 'groups' && <GroupsManagement lecturerGroups={lecturerGroups} />}
+                {selectedKey === 'groups' && <GroupsManagement lecturerGroups={lecturerGroups} onViewGroupDetails={handleViewGroupDetails} />}
                 {selectedKey === 'kits' && <KitRental kits={kits} user={user} onRent={handleRent} />}
                 {selectedKey === 'refunds' && <RefundRequests refundRequests={refundRequests} setRefundRequests={setRefundRequests} user={user} onNewRefund={handleNewRefund} />}
                 {selectedKey === 'wallet' && <WalletManagement wallet={wallet} setWallet={setWallet} onTopUp={handleTopUp} />}
@@ -491,6 +499,136 @@ function LecturerPortal({ user, onLogout }) {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Group Detail Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <TeamOutlined style={{ color: '#1890ff' }} />
+            <span>Group Details</span>
+          </div>
+        }
+        open={groupDetailModal}
+        onCancel={() => setGroupDetailModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setGroupDetailModal(false)}>
+            Close
+          </Button>
+        ]}
+        width={700}
+      >
+        {selectedGroup && (
+          <div>
+            <Row gutter={[24, 24]}>
+              <Col span={24}>
+                <Card 
+                  title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{selectedGroup.name}</span>
+                      <Tag color="blue">Group ID: {selectedGroup.id}</Tag>
+                    </div>
+                  }
+                  style={{ marginBottom: '16px' }}
+                >
+                  <Descriptions column={2} bordered>
+                    <Descriptions.Item label="Group Name" span={2}>
+                      <Text strong>{selectedGroup.name}</Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Group Leader">
+                      <Tag color="blue" icon={<UserOutlined />}>
+                        {selectedGroup.leader}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Total Members">
+                      <Badge count={selectedGroup.members.length + 1} showZero color="#52c41a" />
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Lecturer">
+                      <Tag color="purple" icon={<UserOutlined />}>
+                        {selectedGroup.lecturer}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Group Status">
+                      <Tag color="success">Active</Tag>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+
+              <Col span={24}>
+                <Card title="Group Members" style={{ marginBottom: '16px' }}>
+                  <List
+                    header={
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Members List</span>
+                        <Badge count={selectedGroup.members.length + 1} showZero color="#52c41a" />
+                      </div>
+                    }
+                    dataSource={[
+                      { 
+                        email: selectedGroup.leader, 
+                        role: 'Leader',
+                        avatar: <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
+                      },
+                      ...selectedGroup.members.map(member => ({
+                        email: member,
+                        role: 'Member',
+                        avatar: <Avatar style={{ backgroundColor: '#52c41a' }} icon={<UserOutlined />} />
+                      }))
+                    ]}
+                    renderItem={(item) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          avatar={item.avatar}
+                          title={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>{item.email}</span>
+                              <Tag color={item.role === 'Leader' ? 'blue' : 'green'} size="small">
+                                {item.role}
+                              </Tag>
+                            </div>
+                          }
+                          description={`Email: ${item.email}`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </Card>
+              </Col>
+
+              <Col span={24}>
+                <Card title="Group Statistics">
+                  <Row gutter={[16, 16]}>
+                    <Col span={8}>
+                      <Statistic
+                        title="Total Members"
+                        value={selectedGroup.members.length + 1}
+                        prefix={<UserOutlined />}
+                        valueStyle={{ color: '#52c41a' }}
+                      />
+                    </Col>
+                    <Col span={8}>
+                      <Statistic
+                        title="Leader"
+                        value={1}
+                        prefix={<UserOutlined />}
+                        valueStyle={{ color: '#1890ff' }}
+                      />
+                    </Col>
+                    <Col span={8}>
+                      <Statistic
+                        title="Members"
+                        value={selectedGroup.members.length}
+                        prefix={<UserOutlined />}
+                        valueStyle={{ color: '#fa8c16' }}
+                      />
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        )}
       </Modal>
     </Layout>
   );
@@ -604,7 +742,7 @@ const DashboardContent = ({ lecturerGroups, wallet, kits }) => (
 );
 
 // Groups Management Component
-const GroupsManagement = ({ lecturerGroups }) => (
+const GroupsManagement = ({ lecturerGroups, onViewGroupDetails }) => (
   <div>
     <motion.div variants={cardVariants} initial="hidden" animate="visible" whileHover="hover">
       <Card title="My Groups" style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
@@ -612,13 +750,53 @@ const GroupsManagement = ({ lecturerGroups }) => (
           <Row gutter={[24, 24]}>
             {lecturerGroups.map((group) => (
               <Col xs={24} md={12} lg={8} key={group.id}>
-                <Card title={group.name} size="small">
-                  <Descriptions column={1}>
-                    <Descriptions.Item label="Leader">{group.leader}</Descriptions.Item>
-                    <Descriptions.Item label="Total Members">{group.members.length + 1}</Descriptions.Item>
-                    <Descriptions.Item label="Members">{group.members.join(', ')}</Descriptions.Item>
-                  </Descriptions>
-                </Card>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Card 
+                    title={group.name} 
+                    size="small"
+                    hoverable
+                    onClick={() => onViewGroupDetails(group)}
+                    style={{ cursor: 'pointer' }}
+                    extra={
+                      <Button 
+                        type="link" 
+                        size="small" 
+                        icon={<EyeOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewGroupDetails(group);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    }
+                  >
+                    <Descriptions column={1} size="small">
+                      <Descriptions.Item label="Leader">
+                        <Tag color="blue">{group.leader}</Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Total Members">
+                        <Badge count={group.members.length + 1} showZero color="#52c41a" />
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Members">
+                        <div style={{ maxHeight: '60px', overflow: 'hidden' }}>
+                          {group.members.length > 0 ? (
+                            group.members.map((member, index) => (
+                              <Tag key={index} color="green" style={{ marginBottom: '4px' }}>
+                                {member}
+                              </Tag>
+                            ))
+                          ) : (
+                            <Text type="secondary">No members yet</Text>
+                          )}
+                        </div>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </motion.div>
               </Col>
             ))}
           </Row>
